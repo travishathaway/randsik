@@ -24,7 +24,7 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 setup(
     name='randsik',
     version='0.1.0',
-    description='Deploy static HTML sites to S3 with the simple 'alotofeffort' command.',
+    description='Randsik (random + musik) is a library for generating generative music in Python ',
     long_description=readme + '\n\n' + doclink + '\n\n' + history,
     author='Travis Hathaway',
     author_email='travis.j.hathaway@gmail.com',

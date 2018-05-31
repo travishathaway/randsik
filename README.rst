@@ -8,8 +8,7 @@ randsik
 .. image:: https://travis-ci.org/travishathaway/randsik.png?branch=master
     :target: https://travis-ci.org/travishathaway/randsik
 
-Deploy static HTML sites to S3 with the simple 'alotofeffort' command.
-
+Randsik (random + musik) is a library for generating generative music in Python 
 
 Features
 --------
