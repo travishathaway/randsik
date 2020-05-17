@@ -7,7 +7,9 @@ name = "pypi"
 
 [packages]
 
+mido = "*"
 
 
 [dev-packages]
 
+pytest = "*"
