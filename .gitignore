@@ -42,3 +42,7 @@ output/*/index.html
 docs/_build
 
 .pytest_cache
+
+.cache
+.idea
+test.midi

@@ -1,4 +1,3 @@
-import random
 from dataclasses import dataclass
 from typing import Union, Iterable, AnyStr
 
@@ -25,6 +24,12 @@ ACCIDENTAL_SHARP = '#'
 ACCIDENTAL_FLAT = 'b'
 
 MIDI_NOTES = 128
+
+# Standard for the amount of "ticks per beat note"
+QUARTER = 480
+EIGHTH = 240
+SIXTEENTH = 120
+THIRTYSECOND = 60
 
 
 def note_midi_map() -> dict:
@@ -56,7 +61,7 @@ class Note:
     """
     Represents a single note to played
     """
-    value: str
+    value: Union[int, str]
     velocity: int
     duration: int
 
@@ -64,8 +69,14 @@ class Note:
         """
         Validate the values
         """
-        if self.value not in NOTE_MIDI_MAP.keys():
-            raise ValueError('Attribute "value" must appear in NOTE_MIDI_MAP')
+        if isinstance(self.value, str):
+            if self.value not in NOTE_MIDI_MAP.keys():
+                raise ValueError('Attribute "value", when str, must appear in NOTE_MIDI_MAP')
+        elif isinstance(self.value, int):
+            if self.value > 127 or self.value < 0:
+                raise ValueError('Attribute "value", when int, must be in range of 0 to 127')
+        else:
+            raise ValueError('Attribute "value" wrong type. Please set as int or str')
         if self.velocity > 127 or self.velocity < 0:
             raise ValueError('Attribute "velocity" must be an integer between 0 and 127')
         if self.duration < 0:
@@ -95,7 +106,10 @@ def write_note(track, note, rest_val=None) -> None:
     :param note: note object
     :param rest_val: how long of a rest to how in ticks per quarter note
     """
-    note_val = NOTE_MIDI_MAP[note.value]
+    if isinstance(note.value, str):
+        note_val = NOTE_MIDI_MAP[note.value]
+    else:
+        note_val = note.value
     time = rest_val or 0
     track.append(Message('note_on', note=note_val, velocity=note.velocity, time=time))
     track.append(Message('note_off', note=note_val, velocity=note.velocity, time=note.duration))
@@ -111,8 +125,32 @@ class Pattern:
         self.sequence = sequence
         self.tempo = tempo
 
+        # build midi track given input
+        self._build_midi_track()
+
     def __repr__(self) -> str:
         return f'Pattern(sequence={self.sequence})'
+
+    def _build_midi_track(self) -> None:
+        """
+        Builds a midi track given the arguments provided to __init__
+        """
+        self.mid = MidiFile()
+        track = MidiTrack()
+        self.mid.tracks.append(track)
+        rest_val = None
+
+        for seq in self.sequence:
+            print(seq)
+            if isinstance(seq, tuple):
+                for note in seq:
+                    write_note(track, note)
+            elif isinstance(seq, Note):
+                write_note(track, seq, rest_val)
+                rest_val = None
+            elif isinstance(seq, Rest):
+                rest_val = seq.duration
+                continue
 
     def save(self, filename: AnyStr) -> None:
         """
@@ -121,30 +159,90 @@ class Pattern:
 
         :param filename: Location to write file to
         """
-        mid = MidiFile()
-        track = MidiTrack()
-        mid.tracks.append(track)
-        rest_val = None
-
-        for seq in self.sequence:
-            if isinstance(seq, tuple):
-                for note in seq:
-                    write_note(track, note)
-            elif isinstance(seq, Note):
-                print((track, seq, rest_val))
-                write_note(track, seq, rest_val)
-                rest_val = None
-            elif isinstance(seq, Rest):
-                rest_val = seq.duration
-                continue
-
-        mid.save(filename)
+        self.mid.save(filename)
 
 
-class Song:
+def generate(note: str = 'C4', mode: str = 'ionian',
+             measures: int = 4, time_sig: str = '4/4') -> Pattern:
     """
-    A collection of patterns, chords and notes
-    """
+    Function to generate a random sequence of notes
 
-    def __init__(self, *args: Union[Pattern, Note]):
-        self.items = args
+    :param note: key of pattern, will also determine octave ('C4', 'D3', etc.)
+    :param mode: which mode to choose from ('ionian', 'mixolydian', 'chromatic
+    :param measures: Number of measures to generate notes for
+    :param time_sig: Time signature to use ('4/4', '3/4', '6/8', '5/4')
+    """
+    if note not in NOTE_MIDI_MAP:
+        raise ValueError('"note" must be a valid note (e.g. "C4", "A5", etc.)')
+
+    start_midi_note = NOTE_MIDI_MAP[note]
+    playable_notes = get_mode_midi_notes(mode, start_midi_note)
+
+    pattern_notes = []
+    for note_val in playable_notes:
+        pattern_notes.append(
+            Note(note_val, 127, QUARTER)
+        )
+
+    pattern = Pattern(pattern_notes)
+
+    return pattern
+
+
+MUSIC_MODES = {
+    'ionian': (2, 2, 1, 2, 2, 2, 1)
+}
+
+
+def get_mode_midi_notes(mode: str, start_note: int) -> set:
+    """
+    Provided a mode ("ionian", "mixolydian", "chromatic", etc.) return all playable
+    notes in the mode.
+
+    The idea here is that we two parameters: a mode and a start note. With the mode
+    we can figure out the steps (w-w-h-w-w-w-h or 2-2-1-2-2-2-1 for ionian) and
+    with the start note we know where to start at.
+
+    The basic algorithm just walks up until reaching the 127th note and walks down until
+    reaching 0.
+
+    :param mode: musical mode ("ionian", "mixolydian", etc.)
+    :param start_note: starting note (e.g. "C4")
+
+    :return: set of allowable notes to be played
+    """
+    playable_notes = []
+
+    if mode == 'chromatic':
+        return {x for x in range(128)}
+    else:
+        steps = MUSIC_MODES.get(mode)
+        if not steps:
+            raise ValueError('Invalid mode supplied')
+
+        # Let's go up first
+        current_note = start_note
+        broken = False
+
+        while not broken:
+            playable_notes.append(current_note)
+            for step in steps:
+                current_note += step
+                if current_note > 127:
+                    broken = True
+                    break
+                playable_notes.append(current_note)
+
+        # Now let's go down
+        current_note = start_note
+        broken = False
+
+        while not broken:
+            for step in reversed(steps):
+                current_note -= step
+                if current_note < 20:
+                    broken = True
+                    break
+                playable_notes.append(current_note)
+
+    return set(playable_notes)
