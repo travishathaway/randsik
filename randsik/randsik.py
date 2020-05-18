@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from typing import Union, Iterable, AnyStr
 
@@ -17,6 +18,16 @@ NOTES = (
     ('G',),
     ('G#', 'Ab'),
 )
+
+MUSIC_MODES = {
+    'ionian': (2, 2, 1, 2, 2, 2, 1),
+    'dorian': (2, 1, 2, 2, 2, 1, 2),
+    'phrygian': (1, 2, 2, 2, 1, 2, 2),
+    'lydian': (2, 2, 2, 1, 2, 2, 1),
+    'mixolydian': (2, 2, 1, 2, 2, 1, 2),
+    'aeolian': (2, 1, 2, 2, 1, 2, 2),
+    'locrian': (1, 2, 2, 1, 2, 2, 2)
+}
 
 OCTAVES = (-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
@@ -141,7 +152,6 @@ class Pattern:
         rest_val = None
 
         for seq in self.sequence:
-            print(seq)
             if isinstance(seq, tuple):
                 for note in seq:
                     write_note(track, note)
@@ -162,24 +172,37 @@ class Pattern:
         self.mid.save(filename)
 
 
-def generate(note: str = 'C4', mode: str = 'ionian',
-             measures: int = 4, time_sig: str = '4/4') -> Pattern:
+def generate(note: str = None, mode: str = None, octaves: int = 1, length: int = 10) -> Pattern:
     """
     Function to generate a random sequence of notes
 
-    :param note: key of pattern, will also determine octave ('C4', 'D3', etc.)
-    :param mode: which mode to choose from ('ionian', 'mixolydian', 'chromatic
-    :param measures: Number of measures to generate notes for
-    :param time_sig: Time signature to use ('4/4', '3/4', '6/8', '5/4')
+    :param note: key of pattern, will also determine octave ('C4', 'D3', etc.).
+                 if None random note will be selected
+    :param mode: which mode to choose from ('ionian', 'mixolydian', 'chromatic').
+                 if None random mode will be chosen
+    :param octaves: Number of octaves to use
+    :param length: Number of notes
     """
-    if note not in NOTE_MIDI_MAP:
+    start_midi_note = None
+    if note is None:
+        start_midi_note = random.choice(range(40, 80))
+    elif note not in NOTE_MIDI_MAP:
         raise ValueError('"note" must be a valid note (e.g. "C4", "A5", etc.)')
 
-    start_midi_note = NOTE_MIDI_MAP[note]
+    if mode is None:
+        mode = random.choice(tuple((MUSIC_MODES.keys())))
+
+    if start_midi_note is None:
+        start_midi_note = NOTE_MIDI_MAP[note]
     playable_notes = get_mode_midi_notes(mode, start_midi_note)
 
+    idx = playable_notes.index(start_midi_note)
+    end = idx + 12 * octaves
+    end_range = end if end < 127 else 127
+    note_selection = playable_notes[idx:end_range]
+
     pattern_notes = []
-    for note_val in playable_notes:
+    for note_val in random.choices(note_selection, k=length):
         pattern_notes.append(
             Note(note_val, 127, QUARTER)
         )
@@ -189,12 +212,7 @@ def generate(note: str = 'C4', mode: str = 'ionian',
     return pattern
 
 
-MUSIC_MODES = {
-    'ionian': (2, 2, 1, 2, 2, 2, 1)
-}
-
-
-def get_mode_midi_notes(mode: str, start_note: int) -> set:
+def get_mode_midi_notes(mode: str, start_note: int) -> list:
     """
     Provided a mode ("ionian", "mixolydian", "chromatic", etc.) return all playable
     notes in the mode.
@@ -214,7 +232,7 @@ def get_mode_midi_notes(mode: str, start_note: int) -> set:
     playable_notes = []
 
     if mode == 'chromatic':
-        return {x for x in range(128)}
+        return [x for x in range(128)]
     else:
         steps = MUSIC_MODES.get(mode)
         if not steps:
@@ -245,4 +263,4 @@ def get_mode_midi_notes(mode: str, start_note: int) -> set:
                     break
                 playable_notes.append(current_note)
 
-    return set(playable_notes)
+    return playable_notes
