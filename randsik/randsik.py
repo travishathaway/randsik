@@ -37,10 +37,14 @@ ACCIDENTAL_FLAT = 'b'
 MIDI_NOTES = 128
 
 # Standard for the amount of "ticks per beat note"
+WHOLE = 1920
+HALF = 960
 QUARTER = 480
 EIGHTH = 240
 SIXTEENTH = 120
 THIRTYSECOND = 60
+
+NOTE_LENGTHS = (QUARTER, EIGHTH, SIXTEENTH)
 
 
 def note_midi_map() -> dict:
@@ -172,7 +176,9 @@ class Pattern:
         self.mid.save(filename)
 
 
-def generate(note: str = None, mode: str = None, octaves: int = 1, length: int = 10) -> Pattern:
+def generate(note: str = None, mode: str = None, octaves: int = 1,
+             measures: int = 1, time_sig: str = '4/4',
+             note_lengths: tuple = (QUARTER, SIXTEENTH, EIGHTH)) -> Pattern:
     """
     Function to generate a random sequence of notes
 
@@ -180,8 +186,11 @@ def generate(note: str = None, mode: str = None, octaves: int = 1, length: int =
                  if None random note will be selected
     :param mode: which mode to choose from ('ionian', 'mixolydian', 'chromatic').
                  if None random mode will be chosen
-    :param octaves: Number of octaves to use
-    :param length: Number of notes
+    :param octaves: Number of octaves to use (default 1)
+    :param measures: Number of measures in given time_sig (default 1)
+    :param time_sig: Time signature to use (default '4/4')
+    :param note_lengths: Tuple of available note lengths to use for pattern (default (QUARTER,
+                         EIGHTH, SIXTEENTH) )
     """
     start_midi_note = None
     if note is None:
@@ -201,11 +210,24 @@ def generate(note: str = None, mode: str = None, octaves: int = 1, length: int =
     end_range = end if end < 127 else 127
     note_selection = playable_notes[idx:end_range]
 
+    # Allowed pulses per measure and total pulses for the track
+    ppm = time_sig_to_ppm(time_sig)
+    total_pulses = ppm * measures
+
     pattern_notes = []
-    for note_val in random.choices(note_selection, k=length):
+    current_pulses = 0
+    while current_pulses < total_pulses:
+        note_val = random.choice(note_selection)
+        length = random.choice(note_lengths)
+
+        # Check if we need to trim the last note to fit in the measure
+        if length + current_pulses > total_pulses:
+            length = length - ((length + current_pulses) - total_pulses)
+
         pattern_notes.append(
-            Note(note_val, 127, QUARTER)
+            Note(note_val, 127, length)
         )
+        current_pulses += length
 
     pattern = Pattern(pattern_notes)
 
@@ -264,3 +286,17 @@ def get_mode_midi_notes(mode: str, start_note: int) -> list:
                 playable_notes.append(current_note)
 
     return playable_notes
+
+
+def time_sig_to_ppm(time_sig) -> int:
+    """
+    Converts a string time signature to ppm, "pulses per measure".
+
+    More information about this number here:
+    - https://en.wikipedia.org/wiki/Pulses_per_quarter_note
+    """
+    beats_per_bar, beat_unit = time_sig.split('/')
+
+    beats_in_bar = int(beats_per_bar) / int(beat_unit) * 4
+
+    return QUARTER * int(beats_in_bar)

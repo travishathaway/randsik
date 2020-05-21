@@ -2,7 +2,10 @@ import randsik
 
 
 def main():
-    pat = randsik.generate(note='B4', mode='lydian', octaves=1, length=24)
+    pat = randsik.generate(
+        mode='lydian', octaves=1, measures=2, time_sig='4/4',
+        note_lengths=(randsik.QUARTER, randsik.THIRTYSECOND)
+    )
     pat.save('test.midi')
 
 

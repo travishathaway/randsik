@@ -5,5 +5,5 @@ __version__ = '0.1.0'
 
 from .randsik import (
     Note, Rest, Pattern, generate,
-    MIDI_NOTES, QUARTER, EIGHTH, SIXTEENTH, THIRTYSECOND
+    MIDI_NOTES, WHOLE, HALF, QUARTER, EIGHTH, SIXTEENTH, THIRTYSECOND
 )
