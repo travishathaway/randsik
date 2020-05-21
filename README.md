@@ -32,10 +32,9 @@ The example above will create a two measure long pattern in 3/4 using quarter no
 The start note or tone, is "D4" and the musical mode is "dorian". When note and mode are left blank,
 they will be chosen randomly.
 
-This is what it sounds like when played with a piano:
-<audio>
-  <source src="examples/example_1_audio.mp3" type="audio/mpeg">
-</audio>
+This is what it sounds like when played with a piano (click link to play audio):
+
+[Listen to audio](https://raw.githubusercontent.com/travishathaway/randsik/master/examples/example_1_audio.mp3)
 
 *Remember that this is random and will change every time.*
 
