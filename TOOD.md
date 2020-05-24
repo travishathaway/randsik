@@ -15,3 +15,11 @@ meh.
 
 I want to be able to launch a CLI program that will start sending random MIDI notes to 
 the device that I select.
+
+## 2020-05-24
+
+I created an example script that just about does what I'd like it to do.
+
+I think it would be cool though if I could figure out a cool way to manipulate the parameters
+in real time. This could be at the very least a config file, and maybe move on to something
+more complex like a GUI interface for adjusting the parameters.

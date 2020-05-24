@@ -34,6 +34,7 @@ setup(
     package_dir={'randsik': 'randsik'},
     include_package_data=True,
     install_requires=[
+        'mido[ports]==1.2.9'
     ],
     license='MIT',
     zip_safe=False,

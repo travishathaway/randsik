@@ -17,8 +17,7 @@ def main():
         with mido.open_output(portname, autoreset=True) as port:
             while True:
                 pat = randsik.generate(
-                    mode='dorian', note='D4',
-                    note_lengths=(randsik.QUARTER, )
+                    mode='ionian', note='D4'
                 )
                 pat.play(port, 92)
     except KeyboardInterrupt:
