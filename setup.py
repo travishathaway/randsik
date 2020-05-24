@@ -13,19 +13,18 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-readme = open('README.rst').read()
+readme = open('README.md').read()
 doclink = """
 Documentation
 -------------
 
 The full documentation is at http://randsik.rtfd.org."""
-history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='randsik',
     version='0.1.0',
     description='Randsik (random + musik) is a library for generating generative music in Python ',
-    long_description=readme + '\n\n' + doclink + '\n\n' + history,
+    long_description=readme + '\n\n' + doclink + '\n\n',
     author='Travis Hathaway',
     author_email='travis.j.hathaway@gmail.com',
     url='https://github.com/travishathaway/randsik',

@@ -1,3 +1,4 @@
+import time
 import random
 from dataclasses import dataclass
 from typing import Union, Iterable, AnyStr
@@ -125,8 +126,8 @@ def write_note(track, note, rest_val=None) -> None:
         note_val = NOTE_MIDI_MAP[note.value]
     else:
         note_val = note.value
-    time = rest_val or 0
-    track.append(Message('note_on', note=note_val, velocity=note.velocity, time=time))
+    time_l = rest_val or 0
+    track.append(Message('note_on', note=note_val, velocity=note.velocity, time=time_l))
     track.append(Message('note_off', note=note_val, velocity=note.velocity, time=note.duration))
 
 
@@ -174,6 +175,26 @@ class Pattern:
         :param filename: Location to write file to
         """
         self.mid.save(filename)
+
+    def play(self, port, tempo: int) -> None:
+        """
+        Provided a valid Midi port, send the notes in sequence to that port in real
+        time (i.e. however long the current `sequence` is, is how long this will take
+        to run.
+
+        :param port: Open Mido Port object
+        :param tempo: Speed to play Midi notes
+        """
+        for seq in self.sequence:
+            if isinstance(seq, Note):
+                on = Message('note_on', note=seq.value)
+                port.send(on)
+                time.sleep(pulses_to_seconds(seq.duration, tempo))
+                off = Message('note_off', note=seq.value)
+                port.send(off)
+
+            elif isinstance(seq, Rest):
+                time.sleep(pulses_to_seconds(seq.duration))
 
 
 def generate(note: str = None, mode: str = None, octaves: int = 1,
@@ -239,7 +260,7 @@ def get_mode_midi_notes(mode: str, start_note: int) -> list:
     Provided a mode ("ionian", "mixolydian", "chromatic", etc.) return all playable
     notes in the mode.
 
-    The idea here is that we two parameters: a mode and a start note. With the mode
+    The idea here is that we have two parameters: a mode and a start note. With the mode
     we can figure out the steps (w-w-h-w-w-w-h or 2-2-1-2-2-2-1 for ionian) and
     with the start note we know where to start at.
 
@@ -300,3 +321,16 @@ def time_sig_to_ppm(time_sig) -> int:
     beats_in_bar = int(beats_per_bar) / int(beat_unit) * 4
 
     return QUARTER * int(beats_in_bar)
+
+
+def pulses_to_seconds(pulses: int, tempo: int) -> float:
+    """
+    This converts pulse values (120 - sixteenth, 240 - eighth, 480 - quarter) to
+    second values.
+
+    :param pulses: Number of pulses
+    :param tempo: Tempo (beats per minute)
+
+    :return: Length of pulses in seconds
+    """
+    return (pulses / QUARTER) * (60 / tempo)
