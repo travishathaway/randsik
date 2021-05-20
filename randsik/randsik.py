@@ -3,73 +3,9 @@ import random
 from dataclasses import dataclass
 from typing import Union, Iterable, AnyStr
 
-from mido import Message, MidiFile, MidiTrack
+from mido import Message, MetaMessage, MidiFile, MidiTrack, bpm2tempo
 
-NOTES = (
-    ('A',),
-    ('A#', 'Bb'),
-    ('B', 'Cb'),
-    ('C', 'B#'),
-    ('C#', 'Db'),
-    ('D',),
-    ('D#', 'Eb'),
-    ('E', 'Fb'),
-    ('F', 'E#'),
-    ('F#', 'Gb'),
-    ('G',),
-    ('G#', 'Ab'),
-)
-
-MUSIC_MODES = {
-    'ionian': (2, 2, 1, 2, 2, 2, 1),
-    'dorian': (2, 1, 2, 2, 2, 1, 2),
-    'phrygian': (1, 2, 2, 2, 1, 2, 2),
-    'lydian': (2, 2, 2, 1, 2, 2, 1),
-    'mixolydian': (2, 2, 1, 2, 2, 1, 2),
-    'aeolian': (2, 1, 2, 2, 1, 2, 2),
-    'locrian': (1, 2, 2, 1, 2, 2, 2)
-}
-
-OCTAVES = (-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-
-ACCIDENTAL_SHARP = '#'
-ACCIDENTAL_FLAT = 'b'
-
-MIDI_NOTES = 128
-
-# Standard for the amount of "ticks per beat note"
-WHOLE = 1920
-HALF = 960
-QUARTER = 480
-EIGHTH = 240
-SIXTEENTH = 120
-THIRTYSECOND = 60
-
-NOTE_LENGTHS = (QUARTER, EIGHTH, SIXTEENTH)
-
-
-def note_midi_map() -> dict:
-    """Generates a list note to midi value mapping"""
-    note_map = {}
-    counter = -3
-
-    for ock in OCTAVES:
-        for ltrs in NOTES:
-            if len(ltrs) == 1:
-                key = f'{ltrs[0]}{ock}'
-                note_map[key] = counter
-            else:
-                key_0 = f'{ltrs[0]}{ock}'
-                key_1 = f'{ltrs[1]}{ock}'
-                note_map[key_0] = counter
-                note_map[key_1] = counter
-
-            counter += 1
-
-    return {x: y for x, y in note_map.items() if 127 >= y >= 0}
-
-
-NOTE_MIDI_MAP = note_midi_map()
+from randsik import constants as const
 
 
 @dataclass
@@ -86,7 +22,7 @@ class Note:
         Validate the values
         """
         if isinstance(self.value, str):
-            if self.value not in NOTE_MIDI_MAP.keys():
+            if self.value not in const.NOTE_MIDI_MAP.keys():
                 raise ValueError('Attribute "value", when str, must appear in NOTE_MIDI_MAP')
         elif isinstance(self.value, int):
             if self.value > 127 or self.value < 0:
@@ -114,32 +50,47 @@ class Rest:
             raise ValueError('Attribute "duration" must be a positive integer')
 
 
-def write_note(track, note, rest_val=None) -> None:
+def write_note(track, note, rest_val=None, channel=0) -> None:
     """
     Writes a note to the provided midi track
 
     :param track: midi track
     :param note: note object
     :param rest_val: how long of a rest to how in ticks per quarter note
+    :param channel: which channel it takes on MIDI file (possible values 0..15)
     """
     if isinstance(note.value, str):
-        note_val = NOTE_MIDI_MAP[note.value]
+        note_val = const.NOTE_MIDI_MAP[note.value]
     else:
         note_val = note.value
     time_l = rest_val or 0
-    track.append(Message('note_on', note=note_val, velocity=note.velocity, time=time_l))
-    track.append(Message('note_off', note=note_val, velocity=note.velocity, time=note.duration))
+    track.append(Message('note_on', note=note_val, velocity=note.velocity, time=time_l, channel=channel))
+    track.append(Message('note_off', note=note_val, velocity=note.velocity, time=note.duration, channel=channel))
 
 
 class Pattern:
     """
     A sequence of chords and notes
     """
+    track: MidiTrack
+    sequence: Iterable[Union[tuple, Note]]
+    tempo: float
+    program: int
+    channel: int
 
     def __init__(self, sequence: Iterable[Union[tuple, Note]],
-                 tempo: float = None) -> None:
+                 tempo: float = None, program: int = 0, channel: int = 0) -> None:
+        """
+        creates a pattern and attaches it to the provided `midi_file` object.
+
+        For more information on values for `program` see:
+            https://en.wikipedia.org/wiki/General_MIDI#Piano
+        """
+        self.track = MidiTrack()
         self.sequence = sequence
         self.tempo = tempo
+        self.program = program  # this controls the instrument
+        self.channel = channel
 
         # build midi track given input
         self._build_midi_track()
@@ -151,55 +102,26 @@ class Pattern:
         """
         Builds a midi track given the arguments provided to __init__
         """
-        self.mid = MidiFile()
-        track = MidiTrack()
-        self.mid.tracks.append(track)
+        self.track.append(Message('program_change', program=self.program))
+        self.track.append(MetaMessage('set_tempo', tempo=bpm2tempo(self.tempo)))
         rest_val = None
 
         for seq in self.sequence:
             if isinstance(seq, tuple):
                 for note in seq:
-                    write_note(track, note)
+                    write_note(self.track, note, channel=self.channel)
             elif isinstance(seq, Note):
-                write_note(track, seq, rest_val)
+                write_note(self.track, seq, rest_val, channel=self.channel)
                 rest_val = None
             elif isinstance(seq, Rest):
                 rest_val = seq.duration
                 continue
 
-    def save(self, filename: AnyStr) -> None:
-        """
-        Renders the current pattern to a file. File can either be passed in as
-        a string or file object.
-
-        :param filename: Location to write file to
-        """
-        self.mid.save(filename)
-
-    def play(self, port, tempo: int) -> None:
-        """
-        Provided a valid Midi port, send the notes in sequence to that port in real
-        time (i.e. however long the current `sequence` is, is how long this will take
-        to run.
-
-        :param port: Open Mido Port object
-        :param tempo: Speed to play Midi notes
-        """
-        for seq in self.sequence:
-            if isinstance(seq, Note):
-                on = Message('note_on', note=seq.value)
-                port.send(on)
-                time.sleep(pulses_to_seconds(seq.duration, tempo))
-                off = Message('note_off', note=seq.value)
-                port.send(off)
-
-            elif isinstance(seq, Rest):
-                time.sleep(pulses_to_seconds(seq.duration))
-
 
 def generate(note: str = None, mode: str = None, octaves: int = 1,
-             measures: int = 1, time_sig: str = '4/4',
-             note_lengths: tuple = (QUARTER, SIXTEENTH, EIGHTH)) -> Pattern:
+             measures: int = 1, time_sig: str = '4/4', scale_degrees=None,
+             program: int = 0, tempo: int = 120, velocity: int = 127,
+             note_lengths: tuple = (const.QUARTER, const.SIXTEENTH, const.EIGHTH)) -> Pattern:
     """
     Function to generate a random sequence of notes
 
@@ -210,26 +132,34 @@ def generate(note: str = None, mode: str = None, octaves: int = 1,
     :param octaves: Number of octaves to use (default 1)
     :param measures: Number of measures in given time_sig (default 1)
     :param time_sig: Time signature to use (default '4/4')
+    :param program: This is the instrument or program number (see: https://en.wikipedia.org/wiki/General_MIDI#Piano)
+    :param tempo: tempo in BPM for pattern
+    :param velocity: velocity for the notes in the pattern
     :param note_lengths: Tuple of available note lengths to use for pattern (default (QUARTER,
                          EIGHTH, SIXTEENTH) )
+    :param scale_degrees: Scale degrees a random pattern can use (e.g. 1, 3, 5)
     """
     start_midi_note = None
     if note is None:
         start_midi_note = random.choice(range(40, 80))
-    elif note not in NOTE_MIDI_MAP:
+    elif note not in const.NOTE_MIDI_MAP:
         raise ValueError('"note" must be a valid note (e.g. "C4", "A5", etc.)')
 
     if mode is None:
-        mode = random.choice(tuple((MUSIC_MODES.keys())))
+        mode = random.choice(tuple((const.MUSIC_MODES.keys())))
 
     if start_midi_note is None:
-        start_midi_note = NOTE_MIDI_MAP[note]
+        start_midi_note = const.NOTE_MIDI_MAP[note]
     playable_notes = get_mode_midi_notes(mode, start_midi_note)
 
     idx = playable_notes.index(start_midi_note)
     end = idx + 12 * octaves
     end_range = end if end < 127 else 127
     note_selection = playable_notes[idx:end_range]
+
+    # This will pick out the scale degrees from the scale (e.g. 1, 3, 5, 7)
+    if scale_degrees:
+        note_selection = [note_selection[x] for x in scale_degrees]
 
     # Allowed pulses per measure and total pulses for the track
     ppm = time_sig_to_ppm(time_sig)
@@ -246,11 +176,11 @@ def generate(note: str = None, mode: str = None, octaves: int = 1,
             length = length - ((length + current_pulses) - total_pulses)
 
         pattern_notes.append(
-            Note(note_val, 127, length)
+            Note(note_val, duration=length, velocity=velocity)
         )
         current_pulses += length
 
-    pattern = Pattern(pattern_notes)
+    pattern = Pattern(pattern_notes, program=program, tempo=tempo)
 
     return pattern
 
@@ -277,7 +207,7 @@ def get_mode_midi_notes(mode: str, start_note: int) -> list:
     if mode == 'chromatic':
         return [x for x in range(128)]
     else:
-        steps = MUSIC_MODES.get(mode)
+        steps = const.MUSIC_MODES.get(mode)
         if not steps:
             raise ValueError('Invalid mode supplied')
 
@@ -320,7 +250,7 @@ def time_sig_to_ppm(time_sig) -> int:
 
     beats_in_bar = int(beats_per_bar) / int(beat_unit) * 4
 
-    return QUARTER * int(beats_in_bar)
+    return const.QUARTER * int(beats_in_bar)
 
 
 def pulses_to_seconds(pulses: int, tempo: int) -> float:
@@ -333,4 +263,4 @@ def pulses_to_seconds(pulses: int, tempo: int) -> float:
 
     :return: Length of pulses in seconds
     """
-    return (pulses / QUARTER) * (60 / tempo)
+    return (pulses / const.QUARTER) * (60 / tempo)
