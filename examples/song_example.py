@@ -3,9 +3,9 @@ import sys
 from mido import MidiFile
 
 from randsik import (
-    Note, Pattern, generate, Rest, EIGHTH, QUARTER
+    Note, Pattern, generate, Rest, EIGHTH, QUARTER, HALF, SIXTEENTH, WHOLE
 )
-from randsik.constants import SynthLead
+from randsik.constants import SynthLead, SoundEffects, Bass, Drums, Pipe, Strings
 
 
 def main():
@@ -20,43 +20,56 @@ def main():
     # octaves the pattern will span) and others.
 
     four_to_floor = [
-        Note(36, 127, EIGHTH),
-        Note(36, 127, EIGHTH),
-        Note(40, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
         Rest(EIGHTH),
-        Note(36, 127, EIGHTH),
-        Note(36, 127, EIGHTH),
-        Note(40, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
         Rest(EIGHTH),
-        Note(36, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
         Rest(EIGHTH),
-        Note(40, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
         Rest(EIGHTH),
-        Note(36, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
         Rest(EIGHTH),
-        Note(40, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
         Rest(EIGHTH),
+        Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
+        Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
     ]
 
     tempo = int(sys.argv[2])
+    mode = 'locrian'
+    key = 'E'
 
     midi_file = MidiFile(type=2)
     sequence = four_to_floor * 2
+
     pat1 = Pattern(sequence, program=119, tempo=tempo, channel=9)
 
     pat2 = generate(
-        'F2', mode='ionian', octaves=1, measures=4, time_sig='4/4',
-        scale_degrees=(1, 5, 7), tempo=tempo, velocity=50,
-        note_lengths=(EIGHTH,), program=SynthLead.LEAD_1_SQUARE
+        f'{key}3', mode=mode, octaves=2, measures=4, time_sig='4/4',
+        scale_degrees=(1, 5, 7, 8, 11), tempo=tempo, velocity=60, channel=2,
+        note_lengths=(EIGHTH, SIXTEENTH,), program=SynthLead.LEAD_7_FIFTHS
     )
 
-    ## pat3 = randsik.generate(
-    ##     'C2', mode='lydian', octaves=1, measures=4, time_sig='4/4',
-    ##     note_lengths=(randsik.QUARTER, ), program=96
-    ## )
+    pat3 = generate(
+        f'{key}2', mode=mode, octaves=1, measures=4, time_sig='4/4', tempo=tempo,
+        scale_degrees=(1, 5), channel=0,
+        note_lengths=(HALF, ), program=Bass.ACOUSTIC_BASS, velocity=100
+    )
+
+    pat4 = generate(
+        f'{key}5', mode=mode, octaves=2, measures=4, time_sig='4/4', tempo=tempo,
+        scale_degrees=(3, 7, 8), channel=1,
+        note_lengths=(HALF, WHOLE), program=Strings.VIOLIN, velocity=100
+    )
+
     midi_file.tracks.append(pat1.track)
     midi_file.tracks.append(pat2.track)
-    # midi_file.tracks.append(pat3.track)
+    midi_file.tracks.append(pat3.track)
+    # midi_file.tracks.append(pat4.track)
+
     midi_file.save(sys.argv[1])
 
 

@@ -48,3 +48,5 @@ docs/_build
 test.midi
 
 .DS_Store
+
+*.swp

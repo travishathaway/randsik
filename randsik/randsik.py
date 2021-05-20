@@ -102,7 +102,7 @@ class Pattern:
         """
         Builds a midi track given the arguments provided to __init__
         """
-        self.track.append(Message('program_change', program=self.program))
+        self.track.append(Message('program_change', program=self.program - 1, channel=self.channel))
         self.track.append(MetaMessage('set_tempo', tempo=bpm2tempo(self.tempo)))
         rest_val = None
 
@@ -120,7 +120,7 @@ class Pattern:
 
 def generate(note: str = None, mode: str = None, octaves: int = 1,
              measures: int = 1, time_sig: str = '4/4', scale_degrees=None,
-             program: int = 0, tempo: int = 120, velocity: int = 127,
+             program: int = 0, tempo: int = 120, velocity: int = 127, channel: int = 0,
              note_lengths: tuple = (const.QUARTER, const.SIXTEENTH, const.EIGHTH)) -> Pattern:
     """
     Function to generate a random sequence of notes
@@ -135,6 +135,7 @@ def generate(note: str = None, mode: str = None, octaves: int = 1,
     :param program: This is the instrument or program number (see: https://en.wikipedia.org/wiki/General_MIDI#Piano)
     :param tempo: tempo in BPM for pattern
     :param velocity: velocity for the notes in the pattern
+    :param channel: channel in the MIDI this pattern will occupy
     :param note_lengths: Tuple of available note lengths to use for pattern (default (QUARTER,
                          EIGHTH, SIXTEENTH) )
     :param scale_degrees: Scale degrees a random pattern can use (e.g. 1, 3, 5)
@@ -180,7 +181,7 @@ def generate(note: str = None, mode: str = None, octaves: int = 1,
         )
         current_pulses += length
 
-    pattern = Pattern(pattern_notes, program=program, tempo=tempo)
+    pattern = Pattern(pattern_notes, program=program, tempo=tempo, channel=channel)
 
     return pattern
 
