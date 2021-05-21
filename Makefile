@@ -5,7 +5,6 @@ help:
 	@echo "clean-pyc - remove Python file artifacts"
 	@echo "lint - check style with flake8"
 	@echo "test - run tests quickly with the default Python"
-	@echo "test-all - run tests on every Python version with tox"
 	@echo "coverage - check code coverage quickly with the default Python"
 	@echo "docs - generate Sphinx HTML documentation, including API docs"
 	@echo "release - package and upload a release"
@@ -24,33 +23,20 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 randsik test
+	poetry run flake8 --max-line-length 99 randsik test
 
 test:
-	py.test
-
-test-all:
-	tox
+	poetry run pytest
 
 coverage:
-	coverage run --source randsik setup.py test
-	coverage report -m
-	coverage html
-	open htmlcov/index.html
+	poetry run coverage run --source randsik -m pytest
+	poetry run coverage report -m
+	poetry run coverage html
 
 docs:
 	rm -f docs/randsik.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ randsik
+	poetry run sphinx-apidoc -o docs/ randsik
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html
-
-release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
-
-sdist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel upload
-	ls -l dist

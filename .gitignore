@@ -50,3 +50,5 @@ test.midi
 .DS_Store
 
 *.swp
+
+htmlcov/

@@ -3,14 +3,17 @@
 language: python
 
 python:
+  - "3.9"
   - "3.8"
   - "3.7"
 
+before_install:
+  - python -m pip install poetry
+
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: 
-  - pip install -r requirements-test.txt
-  - pip install -r requirements-dev.txt
+  - poetry install
 
 # command to run tests, e.g. python setup.py test
 script:
-  - py.test
+  - poetry run pytest

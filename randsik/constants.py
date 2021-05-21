@@ -1,34 +1,34 @@
 from enum import IntEnum
 
 NOTES = (
-    ('A',),
-    ('A#', 'Bb'),
-    ('B', 'Cb'),
-    ('C', 'B#'),
-    ('C#', 'Db'),
-    ('D',),
-    ('D#', 'Eb'),
-    ('E', 'Fb'),
-    ('F', 'E#'),
-    ('F#', 'Gb'),
-    ('G',),
-    ('G#', 'Ab'),
+    ("A",),
+    ("A#", "Bb"),
+    ("B", "Cb"),
+    ("C", "B#"),
+    ("C#", "Db"),
+    ("D",),
+    ("D#", "Eb"),
+    ("E", "Fb"),
+    ("F", "E#"),
+    ("F#", "Gb"),
+    ("G",),
+    ("G#", "Ab"),
 )
 
 MUSIC_MODES = {
-    'ionian': (2, 2, 1, 2, 2, 2, 1),
-    'dorian': (2, 1, 2, 2, 2, 1, 2),
-    'phrygian': (1, 2, 2, 2, 1, 2, 2),
-    'lydian': (2, 2, 2, 1, 2, 2, 1),
-    'mixolydian': (2, 2, 1, 2, 2, 1, 2),
-    'aeolian': (2, 1, 2, 2, 1, 2, 2),
-    'locrian': (1, 2, 2, 1, 2, 2, 2)
+    "ionian": (2, 2, 1, 2, 2, 2, 1),
+    "dorian": (2, 1, 2, 2, 2, 1, 2),
+    "phrygian": (1, 2, 2, 2, 1, 2, 2),
+    "lydian": (2, 2, 2, 1, 2, 2, 1),
+    "mixolydian": (2, 2, 1, 2, 2, 1, 2),
+    "aeolian": (2, 1, 2, 2, 1, 2, 2),
+    "locrian": (1, 2, 2, 1, 2, 2, 2),
 }
 
 OCTAVES = (-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
-ACCIDENTAL_SHARP = '#'
-ACCIDENTAL_FLAT = 'b'
+ACCIDENTAL_SHARP = "#"
+ACCIDENTAL_FLAT = "b"
 
 MIDI_NOTES = 128
 
@@ -51,11 +51,11 @@ def note_midi_map() -> dict:
     for ock in OCTAVES:
         for ltrs in NOTES:
             if len(ltrs) == 1:
-                key = f'{ltrs[0]}{ock}'
+                key = f"{ltrs[0]}{ock}"
                 note_map[key] = counter
             else:
-                key_0 = f'{ltrs[0]}{ock}'
-                key_1 = f'{ltrs[1]}{ock}'
+                key_0 = f"{ltrs[0]}{ock}"
+                key_1 = f"{ltrs[1]}{ock}"
                 note_map[key_0] = counter
                 note_map[key_1] = counter
 
