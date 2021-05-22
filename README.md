@@ -1,6 +1,6 @@
 # randsik
 
-![Build Status](https://github.com/travishathaway/randsik/.github/workflows/python-app.yml/badge.svg)
+![Build Status](https://github.com/travishathaway/randsik/actions/workflows/python-app.yml/badge.svg)
 
 Randsik (random + musik) is a library for generating generative music in Python. In order
 to do this, this library relies on writing MIDI files to disk. These MIDI files can then
