@@ -5,7 +5,7 @@ from mido import MidiFile
 from randsik import (
     Note, Pattern, generate, Rest, EIGHTH, QUARTER, HALF, SIXTEENTH, WHOLE
 )
-from randsik.constants import SynthLead, SoundEffects, Bass, Drums, Pipe, Strings
+from randsik.constants import SynthLead, Bass, Drums, Strings
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     # can pass in a number of arguments include, mode (musical mode), octaves (number of
     # octaves the pattern will span) and others.
 
-    four_to_floor = [
+    four_to_the_floor = [
         Note(Drums.ACOUSTIC_BASS_DRUM, 127, EIGHTH),
         Rest(EIGHTH),
         Note(Drums.ACOUSTIC_SNARE, 127, EIGHTH),
@@ -39,11 +39,11 @@ def main():
     ]
 
     tempo = int(sys.argv[2])
-    mode = 'locrian'
-    key = 'E'
+    mode = 'mixolydian'
+    key = 'A'
 
     midi_file = MidiFile(type=2)
-    sequence = four_to_floor * 2
+    sequence = four_to_the_floor * 2
 
     pat1 = Pattern(sequence, program=119, tempo=tempo, channel=9)
 
@@ -55,7 +55,7 @@ def main():
 
     pat3 = generate(
         f'{key}2', mode=mode, octaves=1, measures=4, time_sig='4/4', tempo=tempo,
-        scale_degrees=(1, 5), channel=0,
+        scale_degrees=(1, 5, 6, 7), channel=0,
         note_lengths=(HALF, ), program=Bass.ACOUSTIC_BASS, velocity=100
     )
 

@@ -7,13 +7,35 @@ from mido import Message, MetaMessage, MidiTrack, bpm2tempo
 from randsik import constants as const
 
 
+class RandsikValidationError(Exception):
+    pass
+
+
+@dataclass
+class NoteValue:
+    value: Union[int, str]  # e.g. A4 or 100
+
+    def __post_init__(self):
+        """
+        Validate the values
+        """
+        self._validate_value()
+
+    def _validate_value(self):
+        valid_values = tuple(const.NOTE_MIDI_MAP.keys()) + tuple(range(128))
+        if self.value not in valid_values:
+            raise RandsikValidationError(
+                'Attribute "value", when str, must appear in NOTE_MIDI_MAP '
+                'or when int, fall within values from 0 to 127'
+            )
+
+
 @dataclass
 class Note:
     """
     Represents a single note to played
     """
-
-    value: Union[int, str]
+    value: NoteValue
     velocity: int
     duration: int
 
@@ -21,24 +43,18 @@ class Note:
         """
         Validate the values
         """
-        if isinstance(self.value, str):
-            if self.value not in const.NOTE_MIDI_MAP.keys():
-                raise ValueError(
-                    'Attribute "value", when str, must appear in NOTE_MIDI_MAP'
-                )
-        elif isinstance(self.value, int):
-            if self.value > 127 or self.value < 0:
-                raise ValueError(
-                    'Attribute "value", when int, must be in range of 0 to 127'
-                )
-        else:
-            raise ValueError('Attribute "value" wrong type. Please set as int or str')
-        if self.velocity > 127 or self.velocity < 0:
-            raise ValueError(
+        self._validate_velocity()
+        self._validate_duration()
+
+    def _validate_velocity(self):
+        if self.velocity not in tuple(range(128)):
+            raise RandsikValidationError(
                 'Attribute "velocity" must be an integer between 0 and 127'
             )
+
+    def _validate_duration(self):
         if self.duration < 0:
-            raise ValueError('Attribute "duration" must be a positive integer')
+            raise RandsikValidationError('Attribute "duration" must be a positive integer')
 
 
 @dataclass
@@ -46,7 +62,6 @@ class Rest:
     """
     Represents a rest
     """
-
     duration: int
 
     def __post_init__(self):
@@ -54,15 +69,15 @@ class Rest:
         Validates the rest object values
         """
         if self.duration < 0:
-            raise ValueError('Attribute "duration" must be a positive integer')
+            raise RandsikValidationError('Attribute "duration" must be a positive integer')
 
 
-def write_note(track, note, rest_val=None, channel=0) -> None:
+def write_note(track: MidiTrack, note: Note, rest_val: Union[Rest, None] = None, channel: int = 0) -> None:
     """
     Writes a note to the provided midi track
 
-    :param track: midi track
-    :param note: note object
+    :param track: track to write to
+    :param note: note to add to track
     :param rest_val: how long of a rest to how in ticks per quarter note
     :param channel: which channel it takes on MIDI file (possible values 0..15)
     """
@@ -126,6 +141,9 @@ class Pattern:
 
     def __repr__(self) -> str:
         return f"Pattern(sequence={self.sequence})"
+
+    def __iter__(self):
+        """Iterate over internal `sequence` property"""
 
     def _build_midi_track(self) -> None:
         """
@@ -199,7 +217,7 @@ def generate(
     end_range = end if end < 127 else 127
     note_selection = playable_notes[idx:end_range]
 
-    # This will pick out the scale degrees from the scale (e.g. 1, 3, 5, 7)
+    # This will limit selection to provided scale degrees (e.g. 1, 3, 5, 7)
     if scale_degrees:
         note_selection = [note_selection[x] for x in scale_degrees]
 
