@@ -6,7 +6,6 @@ authors = ["Travis Hathaway <travis.j.hathaway@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-tdk-py = {extras = ["ports"], version = "mido[ports]"}
 mido = "^1.2.10"
 
 [tool.poetry.dev-dependencies]

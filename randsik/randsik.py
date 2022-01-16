@@ -1,6 +1,7 @@
 import random
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Union, Iterable
+from typing import Union
 
 from mido import Message, MetaMessage, MidiTrack, bpm2tempo
 
@@ -12,30 +13,11 @@ class RandsikValidationError(Exception):
 
 
 @dataclass
-class NoteValue:
-    value: Union[int, str]  # e.g. A4 or 100
-
-    def __post_init__(self):
-        """
-        Validate the values
-        """
-        self._validate_value()
-
-    def _validate_value(self):
-        valid_values = tuple(const.NOTE_MIDI_MAP.keys()) + tuple(range(128))
-        if self.value not in valid_values:
-            raise RandsikValidationError(
-                'Attribute "value", when str, must appear in NOTE_MIDI_MAP '
-                'or when int, fall within values from 0 to 127'
-            )
-
-
-@dataclass
 class Note:
     """
     Represents a single note to played
     """
-    value: NoteValue
+    value: int
     velocity: int
     duration: int
 
@@ -118,11 +100,11 @@ class Pattern:
     channel: int
 
     def __init__(
-        self,
-        sequence: Iterable[Union[tuple, Note]],
-        tempo: float = 120,
-        program: int = 1,
-        channel: int = 0,
+            self,
+            sequence: Iterable[Union[tuple, Note, Rest]],
+            tempo: float = 120,
+            program: int = 1,
+            channel: int = 0,
     ) -> None:
         """
         creates a pattern and attaches it to the provided `midi_file` object.
@@ -168,17 +150,17 @@ class Pattern:
 
 
 def generate(
-    note: str = None,
-    mode: str = None,
-    octaves: int = 1,
-    measures: int = 1,
-    time_sig: str = "4/4",
-    scale_degrees=None,
-    program: int = 1,
-    tempo: int = 120,
-    velocity: int = 127,
-    channel: int = 0,
-    note_lengths: tuple = (const.QUARTER, const.SIXTEENTH, const.EIGHTH),
+        note: str = None,
+        mode: str = None,
+        octaves: int = 1,
+        measures: int = 1,
+        time_sig: str = "4/4",
+        scale_degrees=None,
+        program: const.Instrument = const.Piano.ACOUSTIC_GRAND_PIANO,
+        tempo: int = 120,
+        velocity: int = 127,
+        channel: int = 0,
+        note_lengths: Sequence = (const.QUARTER, const.SIXTEENTH, const.EIGHTH),
 ) -> Pattern:
     """
     Function to generate a random sequence of notes

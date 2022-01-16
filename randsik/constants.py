@@ -33,12 +33,12 @@ ACCIDENTAL_FLAT = "b"
 MIDI_NOTES = 128
 
 # Standard for the amount of "ticks per beat note"
-WHOLE = 1920
-HALF = 960
-QUARTER = 480
-EIGHTH = 240
-SIXTEENTH = 120
-THIRTYSECOND = 60
+WHOLE: int = 1920
+HALF: int = 960
+QUARTER: int = 480
+EIGHTH: int = 240
+SIXTEENTH: int = 120
+THIRTYSECOND: int = 60
 
 NOTE_LENGTHS = (QUARTER, EIGHTH, SIXTEENTH)
 
@@ -66,10 +66,15 @@ def note_midi_map() -> dict:
 
 NOTE_MIDI_MAP = note_midi_map()
 
+
 # Instrument Groups
 
 
-class Piano(IntEnum):
+class Instrument(IntEnum):
+    pass
+
+
+class Piano(Instrument):
     ACOUSTIC_GRAND_PIANO = 1
     BRIGHT_ACOUSTIC_PIANO = 2
     ELECTRIC_GRAND_PIANO = 3
@@ -80,7 +85,7 @@ class Piano(IntEnum):
     CLAVI = 8
 
 
-class ChromaticPercussion(IntEnum):
+class ChromaticPercussion(Instrument):
     CELESTA = 9
     GLOCKENSPIEL = 10
     MUSIC_BOX = 11
@@ -91,7 +96,7 @@ class ChromaticPercussion(IntEnum):
     DULCIMER = 16
 
 
-class Organ(IntEnum):
+class Organ(Instrument):
     DRAWBAR_ORGAN = 17
     PERCUSSIVE_ORGAN = 18
     ROCK_ORGAN = 19
@@ -102,7 +107,7 @@ class Organ(IntEnum):
     TANGO_ACCORDION = 24
 
 
-class Guitar(IntEnum):
+class Guitar(Instrument):
     ACOUSTIC_GUITAR_NYLON = 25
     ACOUSTIC_GUITAR_STEEL = 26
     ELECTRIC_GUITAR_JAZZ = 27
@@ -113,7 +118,7 @@ class Guitar(IntEnum):
     GUITAR_HARMONICS = 32
 
 
-class Bass(IntEnum):
+class Bass(Instrument):
     ACOUSTIC_BASS = 33
     ELECTRIC_BASS_FINGER = 34
     ELECTRIC_BASS_PICK = 35
@@ -124,7 +129,7 @@ class Bass(IntEnum):
     SYNTH_BASS_2 = 40
 
 
-class Strings(IntEnum):
+class Strings(Instrument):
     VIOLIN = 41
     VIOLA = 42
     CELLO = 43
@@ -135,7 +140,7 @@ class Strings(IntEnum):
     TIMPANI = 48
 
 
-class Ensemble(IntEnum):
+class Ensemble(Instrument):
     STRING_ENSEMBLE_1 = 49
     STRING_ENSEMBLE_2 = 50
     SYNTH_STRINGS_1 = 51
@@ -146,7 +151,7 @@ class Ensemble(IntEnum):
     ORCHESTRA_HIT = 56
 
 
-class Brass(IntEnum):
+class Brass(Instrument):
     TRUMPET = 57
     TROMBONE = 58
     TUBA = 59
@@ -157,7 +162,7 @@ class Brass(IntEnum):
     SYNTH_BRASS_2 = 64
 
 
-class Reed(IntEnum):
+class Reed(Instrument):
     SOPRANO_SAX = 65
     ALTO_SAX = 66
     TENOR_SAX = 67
@@ -168,7 +173,7 @@ class Reed(IntEnum):
     CLARINET = 72
 
 
-class Pipe(IntEnum):
+class Pipe(Instrument):
     PICCOLO = 73
     FLUTE = 74
     RECORDER = 75
@@ -179,7 +184,7 @@ class Pipe(IntEnum):
     OCARINA = 80
 
 
-class SynthLead(IntEnum):
+class SynthLead(Instrument):
     LEAD_1_SQUARE = 81
     LEAD_2_SAWTOOTH = 82
     LEAD_3_CALLIOPE = 83
@@ -190,7 +195,7 @@ class SynthLead(IntEnum):
     LEAD_8_BASS_LEAD = 88
 
 
-class SynthPad(IntEnum):
+class SynthPad(Instrument):
     PAD_1_NEW_AGE = 89
     PAD_2_WARM = 90
     PAD_3_POLYSYNTH = 91
@@ -201,7 +206,7 @@ class SynthPad(IntEnum):
     PAD_8_SWEEP = 96
 
 
-class SynthEffects(IntEnum):
+class SynthEffects(Instrument):
     FX_1_RAIN = 97
     FX_2_SOUNDTRACK = 98
     FX_3_CRYSTAL = 99
@@ -212,7 +217,7 @@ class SynthEffects(IntEnum):
     FX_8_SCI_FI = 104
 
 
-class Ethnic(IntEnum):
+class Ethnic(Instrument):
     SITAR = 105
     BANJO = 106
     SHAMISEN = 107
@@ -223,7 +228,7 @@ class Ethnic(IntEnum):
     SHANAI = 112
 
 
-class Percussive(IntEnum):
+class Percussive(Instrument):
     TINKLE_BELL = 113
     AGOGO = 114
     STEEL_DRUMS = 115
@@ -234,7 +239,7 @@ class Percussive(IntEnum):
     REVERSE_CYMBAL = 120
 
 
-class SoundEffects(IntEnum):
+class SoundEffects(Instrument):
     GUITAR_FRET_NOISE = 121
     BREATH_NOISE = 122
     SEASHORE = 123
@@ -245,7 +250,33 @@ class SoundEffects(IntEnum):
     GUNSHOT = 128
 
 
-class Drums(IntEnum):
+ALL_INSTRUMENTS = (
+    Piano,
+    ChromaticPercussion,
+    Organ,
+    Guitar,
+    Bass,
+    Strings,
+    Ensemble,
+    Brass,
+    Reed,
+    Pipe,
+    SynthLead,
+    SynthPad,
+    SynthEffects,
+    Ethnic,
+    Percussive,
+    SoundEffects,
+)
+
+INT_TO_INSTRUMENT = {
+    i.value: i
+    for inst in ALL_INSTRUMENTS
+    for i in inst
+}
+
+
+class Drums(Instrument):
     HIGH_Q = 27
     SLAP = 28
     SCRATCH_PUSH = 29
