@@ -2,7 +2,6 @@ import random
 from collections import defaultdict
 from collections.abc import Sequence, Mapping, Iterator
 from dataclasses import dataclass
-from pprint import pprint
 
 from mido import MidiFile, MidiTrack
 
@@ -76,7 +75,6 @@ def create_song(sections: Section_Seq) -> MidiFile:
     midi_file = MidiFile()
     instrument_map = get_section_instrument_map(sections)
 
-    pprint(instrument_map)
     for idx, (instrument, incl_sect) in enumerate(instrument_map.items()):
         midi_file.tracks.append(track(instrument, idx, zip(incl_sect, sections)))
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "randsik"
-version = "0.1.0"
+version = "0.1.1"
 description = "library for generating random music in Python"
 authors = ["Travis Hathaway <travis.j.hathaway@gmail.com>"]
 
